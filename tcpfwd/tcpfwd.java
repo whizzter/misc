@@ -19,14 +19,18 @@ public class tcpfwd {
 		// setup a connection string array
 		ArrayList<String> basedata=new ArrayList<String>();
 		// by default don't delay messages.
-		int delay=0;
+		int[] delays=new int[2];
 		// parse arguments, putting non-args into basedata and everything starting with a - is treated as an argument.
 		for (String arg:args) {
 			// take everything starting with a -
 			if (arg.startsWith("-")) {
 				// just a simple if-else chain here
 				if (arg.startsWith("-delay:")) {
-					delay=Integer.parseInt(arg.substring(7));
+					delays[0]=Integer.parseInt(arg.substring(7));
+					if (delays[1]==0)
+						delays[1]=delays[0];
+				} else if (arg.startsWith("-delay2:")) {
+					delays[1]=Integer.parseInt(arg.substring(8));
 				} else {
 					// error out on unknown args.
 					System.err.println("Unknown arg "+arg);
@@ -49,9 +53,7 @@ public class tcpfwd {
 			ServerSocket ss=new ServerSocket(Integer.parseInt(basedata.get(0)));
 
 			// setup a daemonized timer if needed.
-			Timer timer=delay!=0?new Timer(true):null;
-			// we need a dummy final delay variable (Java scoping)
-			final int finDelay=delay;
+			Timer timer=new Timer(true);
 
 			// accept sockets forever.
 			while(true) {
@@ -72,6 +74,10 @@ public class tcpfwd {
 					final Socket other=sockets[i^1];
 					// and open an output stream to it.
 					final OutputStream os=other.getOutputStream();
+					
+					// get our delay
+					int delay=delays[i];
+					
 					// create and start a new thread for this direction.
 					new Thread(()->{
 						// The thread started here will block reading in one direction and then send over the data (possibly after an delay)
@@ -88,7 +94,7 @@ public class tcpfwd {
 								if (rc==0)
 									continue;
 								// if no delay is given we send out the read data directly
-								if (finDelay==0)
+								if (delay==0)
 									os.write(dataBuf, 0, rc); // rc is positive here.
 								else {
 									// if delayed we need to make a copy of the data to be sent (just copy the amount read)
@@ -101,7 +107,7 @@ public class tcpfwd {
 												os.write(out,0,out.length); // send everything
 											} catch (IOException ioex) {}
 										}
-									}, finDelay);
+									}, delay);
 								}
 							}
 						} catch (IOException e) {} // the catch here doesn't really do anything but is here to ensure that we try closing the other side.
