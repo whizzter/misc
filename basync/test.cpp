@@ -14,7 +14,10 @@ BASYNC(
 	int         idx;    // variable needs to be here to live across BAWAIT calls
 	std::string val;    // this variable is the return value from an await!
 ,
+	// Function body starts here!!
+
 	std::cout<<"["<<id<<"] Entering\n";
+
 	for (idx=0;idx<count;idx++) {
 		val=std::to_string(idx);
 
@@ -23,6 +26,7 @@ BASYNC(
 		int dummy=123;;
 		std::cout<<"["<<id<<"] Test awaited value:"<<val<<" on iter "<<idx<<" (stackpos:"<<((void*)&dummy) << ")\n";
 	}
+
 	std::cout<<"["<<id<<"] Finished\n";
 	return count*20;
 )
